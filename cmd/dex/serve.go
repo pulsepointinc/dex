@@ -21,6 +21,7 @@ import (
 
 	"github.com/coreos/dex/api"
 	"github.com/coreos/dex/server"
+	"github.com/coreos/dex/server/client"
 	"github.com/coreos/dex/storage"
 )
 
@@ -251,6 +252,23 @@ func serve(cmd *cobra.Command, args []string) error {
 				return fmt.Errorf("listening on %s failed: %v", c.GRPC.Addr, err)
 			}()
 		}()
+	}
+
+	if (client.InternalClient{}) != c.InternalClient {
+		httpRouter, issuerUrl := serv.HttpHandler()
+		clientConfig := &client.Config{
+			Issuer:     c.Issuer,
+			IssuerURL:  issuerUrl,
+			HttpRouter: httpRouter,
+			Config:     c.InternalClient,
+			TLSCert:    c.Web.TLSCert,
+			WebConfig:  c.Frontend,
+			Logger:     logger,
+		}
+		_, err := client.NewClient(clientConfig)
+		if (err != nil) {
+			return fmt.Errorf("failed to initialize client: %v", err)
+		}
 	}
 
 	return <-errc

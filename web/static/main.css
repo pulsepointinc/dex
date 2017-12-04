@@ -124,3 +124,14 @@ body {
 .dex-error-box {
   margin: 20px auto;
 }
+
+.client-result {
+  text-align: left;
+  word-wrap: break-word;
+}
+
+.client-command {
+  text-align: left;
+  word-wrap: break-word;
+}
+
