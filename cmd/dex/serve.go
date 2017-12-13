@@ -261,7 +261,6 @@ func serve(cmd *cobra.Command, args []string) error {
 			IssuerURL:  issuerUrl,
 			HttpRouter: httpRouter,
 			Config:     c.InternalClient,
-			TLSCert:    c.Web.TLSCert,
 			WebConfig:  c.Frontend,
 			Logger:     logger,
 		}

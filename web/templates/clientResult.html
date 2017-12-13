@@ -5,8 +5,20 @@
     RefreshToken: <p>{{ .RefreshToken }}</p>
 
     <div class="client-command">
-
+        kubectl config set-credentials USER_NAME
+        --auth-provider=oidc
+        --auth-provider-arg=idp-issuer-url={{ .IssuerUrl }}
+        --auth-provider-arg=client-id={{ .ClientId }}
+        --auth-provider-arg=client-secret={{ .ClientSecret }}
+        --auth-provider-arg=refresh-token={{ .RefreshToken }}
+        --auth-provider-arg=idp-certificate-authority={{ .CaPath }}
+        --auth-provider-arg=id-token={{ .IdToken }}
     </div>
+
+    <p>
+    Note: please change USER_NAME to your user name that is used by kubectl for cluster access (see `kubectl config view`)
+    </p>
+    <p>Please put appropriate path for idp-certificate-authority if needed</p>
 </div>
 
 {{ template "footer.html" . }}

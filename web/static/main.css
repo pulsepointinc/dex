@@ -126,12 +126,16 @@ body {
 }
 
 .client-result {
+  width: 100%;
   text-align: left;
   word-wrap: break-word;
+  word-break: break-all;
+  background-color: #CCCCCC;
 }
 
 .client-command {
   text-align: left;
   word-wrap: break-word;
+  background-color: #999999;
 }
 

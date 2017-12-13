@@ -20,16 +20,25 @@ import (
 )
 
 type InternalClient struct {
-	InternalClientURL string `json:"internalClientURL"`
-	ClientID          string `json:"clientID"`
-	ClientSecret      string `json:"clientSecret"`
+	// Used to form back redirect URL
+	ClientURL        string `json:"clientURL"`
+
+	// Used to access dex by https
+	RootCA           string `json:"rootCA"`
+
+	ClientID         string `json:"clientID"`
+	ClientSecret     string `json:"clientSecret"`
+	// Used to access dex from client internally to get refresh and id tokens
+	InternalIssueURL string `json:"internalIssuerURL"`
+
+	// CA Path used as kubectl idp-certificate-authority
+	LocalRootCA           string `json:"localRootCA"`
 }
 
 type Config struct {
 	Issuer     string
 	IssuerURL  *url.URL
 	Config     InternalClient
-	TLSCert    string
 	WebConfig  server.WebConfig
 	Logger     logrus.FieldLogger
 	HttpRouter *mux.Router
@@ -49,7 +58,8 @@ type Templates struct {
 	clientResult *template.Template
 }
 
-const myAppState = "My application state"
+const myAppState = "PulsePoint_internal_client"
+
 var scopes = []string{"openid", "profile", "email", "groups", "offline_access"}
 
 func NewClient(config *Config) (*Client, error) {
@@ -61,7 +71,8 @@ func NewClient(config *Config) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Create http transport: %v", err)
 	}
-	redirectURL := config.Config.InternalClientURL + "callback"
+	redirectURL := config.Config.ClientURL + "callback"
+
 	c := &Client{
 		config:      config,
 		redirectURL: redirectURL,
@@ -77,8 +88,8 @@ func NewClient(config *Config) (*Client, error) {
 			Scopes:       scopes,
 			RedirectURL:  redirectURL,
 			Endpoint: oauth2.Endpoint{
-				AuthURL:  config.Issuer + "/auth",
-				TokenURL: config.Issuer + "/token",
+				AuthURL:  config.Config.InternalIssueURL + "/auth",
+				TokenURL: config.Config.InternalIssueURL + "/token",
 			},
 		},
 	}
@@ -86,6 +97,9 @@ func NewClient(config *Config) (*Client, error) {
 	router := config.HttpRouter
 	router.HandleFunc("/", c.handleIndex)
 	router.HandleFunc("/callback", c.handleCallback)
+	router.HandleFunc("/rootCA", func(writer http.ResponseWriter, request *http.Request) {
+		http.ServeFile(writer, request, c.config.Config.RootCA)
+	})
 
 	return c, nil
 }
@@ -113,8 +127,8 @@ func parseTemplates(config *Config) (*template.Template, error) {
 }
 
 func createHttpClient(config *Config) (*http.Client, error) {
-	if config.TLSCert != "" {
-		client, err := httpClientForRootCAs(config.TLSCert)
+	if config.Config.RootCA != "" {
+		client, err := httpClientForRootCAs(config.Config.RootCA)
 		if err != nil {
 			return nil, err
 		}
@@ -180,7 +194,7 @@ func (c *Client) handleIndex(w http.ResponseWriter, r *http.Request) {
 
 	c.templates.clientIndex.Execute(w, struct {
 		ServerUrl string
-	}{c.oauth2Config.Endpoint.AuthURL + "?" + v.Encode()})
+	}{c.config.Issuer + "/auth?" + v.Encode()})
 }
 
 func (c *Client) handleCallback(w http.ResponseWriter, r *http.Request) {
@@ -207,18 +221,6 @@ func (c *Client) handleCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		token, err = c.oauth2Config.Exchange(ctx, code)
-	case "POST":
-		// Form request from frontend to refresh a token.
-		refresh := r.FormValue("refresh_token")
-		if refresh == "" {
-			http.Error(w, fmt.Sprintf("no refresh_token in request: %q", r.Form), http.StatusBadRequest)
-			return
-		}
-		t := &oauth2.Token{
-			RefreshToken: refresh,
-			Expiry:       time.Now().Add(-time.Hour),
-		}
-		token, err = c.oauth2Config.TokenSource(ctx, t).Token()
 	default:
 		http.Error(w, fmt.Sprintf("method not implemented: %s", r.Method), http.StatusBadRequest)
 		return
@@ -249,10 +251,18 @@ func (c *Client) handleCallback(w http.ResponseWriter, r *http.Request) {
 	*/
 
 	c.templates.clientResult.Execute(w, struct {
-		IdToken string
+		IdToken      string
 		RefreshToken string
+		IssuerUrl    string
+		ClientId     string
+		ClientSecret string
+		CaPath       string
 	}{
-		IdToken: rawIDToken,
+		IdToken:      rawIDToken,
 		RefreshToken: token.RefreshToken,
+		IssuerUrl:    c.config.Issuer,
+		ClientId:     c.config.Config.ClientID,
+		ClientSecret: c.config.Config.ClientSecret,
+		CaPath:       c.config.Config.LocalRootCA,
 	})
 }
