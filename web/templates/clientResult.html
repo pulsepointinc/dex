@@ -5,7 +5,7 @@
     RefreshToken: <p>{{ .RefreshToken }}</p>
 
     <div class="client-command">
-        kubectl config set-credentials USER_NAME
+        kubectl config set-credentials {{ .UserName }}
         --auth-provider=oidc
         --auth-provider-arg=idp-issuer-url={{ .IssuerUrl }}
         --auth-provider-arg=client-id={{ .ClientId }}

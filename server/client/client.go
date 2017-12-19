@@ -31,8 +31,11 @@ type InternalClient struct {
 	// Used to access dex from client internally to get refresh and id tokens
 	InternalIssueURL string `json:"internalIssuerURL"`
 
+	// User name used in kubectl
+	LocalUserName    string `json:"localUserName"`
+
 	// CA Path used as kubectl idp-certificate-authority
-	LocalRootCA           string `json:"localRootCA"`
+	LocalRootCA      string `json:"localRootCA"`
 }
 
 type Config struct {
@@ -256,6 +259,7 @@ func (c *Client) handleCallback(w http.ResponseWriter, r *http.Request) {
 		IssuerUrl    string
 		ClientId     string
 		ClientSecret string
+		UserName	 string
 		CaPath       string
 	}{
 		IdToken:      rawIDToken,
@@ -263,6 +267,7 @@ func (c *Client) handleCallback(w http.ResponseWriter, r *http.Request) {
 		IssuerUrl:    c.config.Issuer,
 		ClientId:     c.config.Config.ClientID,
 		ClientSecret: c.config.Config.ClientSecret,
+		UserName:     c.config.Config.LocalUserName,
 		CaPath:       c.config.Config.LocalRootCA,
 	})
 }
