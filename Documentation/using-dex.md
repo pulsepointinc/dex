@@ -47,7 +47,7 @@ staticClients:
   - 'http://127.0.0.1:5555/callback'
 ```
 
-In this case, the Go code would configured as:
+In this case, the Go code would be configured as:
 
 ```go
 // Initialize a provider by specifying dex's issuer URL.
@@ -63,7 +63,7 @@ oauth2Config := oauth2.Config{
     ClientSecret: "example-app-secret",
 
     // The redirectURL.
-    RedirectURL: "http://127.0.0.1:5556/callback",
+    RedirectURL: "http://127.0.0.1:5555/callback",
 
     // Discovery returns the OAuth2 endpoints.
     Endpoint: provider.Endpoint(),
