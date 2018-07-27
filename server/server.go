@@ -125,7 +125,7 @@ type Server struct {
 
 	storage storage.Storage
 
-	mux http.Handler
+	mux *mux.Router
 
 	templates *templates
 
@@ -147,6 +147,10 @@ func NewServer(ctx context.Context, c Config) (*Server, error) {
 		value(c.RotateKeysAfter, 6*time.Hour),
 		value(c.IDTokensValidFor, 24*time.Hour),
 	))
+}
+
+func (server *Server) HttpHandler() (*mux.Router, *url.URL) {
+	return server.mux, &server.issuerURL
 }
 
 func newServer(ctx context.Context, c Config, rotationStrategy rotationStrategy) (*Server, error) {
