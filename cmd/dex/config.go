@@ -15,6 +15,7 @@ import (
 	"github.com/coreos/dex/storage/kubernetes"
 	"github.com/coreos/dex/storage/memory"
 	"github.com/coreos/dex/storage/sql"
+	"github.com/coreos/dex/server/client"
 )
 
 // Config is the config format for the main application.
@@ -46,6 +47,9 @@ type Config struct {
 	// querying the storage. Cannot be specified without enabling a passwords
 	// database.
 	StaticPasswords []password `json:"staticPasswords"`
+
+	//
+	InternalClient client.InternalClient `json:"internalClient"`
 }
 
 type password storage.Password
